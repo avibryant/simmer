@@ -1,4 +1,4 @@
-This works much like Hadoop streaming's Aggregate package, except that it provides access to Algebird's suite of aggregators. It can also be used directly from the unix shell, as a filter in a pipeline.
+This works much like [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), except that it provides access to [Algebird](http://github.com/twitter/algebird)'s suite of aggregators. It can also be used directly from the unix shell, as a filter in a pipeline.
 
 To build:
 ````
