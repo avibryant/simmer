@@ -5,7 +5,8 @@ import com.twitter.bijection._
 import com.twitter.chill._
 
 object AlgebirdAggregators extends Registrar {
-	register("hll", 12){n => new HyperLogLog(n)}
+	register("hll", 12){new HyperLogLog(_)}
+	register("mh", 64){new MinHash(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -33,7 +34,16 @@ trait KryoAggregator[A] extends AlgebirdAggregator[A] {
 }
 
 class HyperLogLog(size : Int) extends KryoAggregator[HLL] {
-  def semigroup = new HyperLogLogMonoid(size)
+  val semigroup = new HyperLogLogMonoid(size)
   def prepare(in : String) = semigroup.create(in.getBytes)
   def present(out : HLL) = out.estimatedSize.toInt.toString
+}
+
+class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
+	val semigroup = new MinHasher16(0.1, hashes * 2)
+	val injection = Bijection.bytes2Base64 andThen Base64String.unwrap
+	def prepare(in : String) = semigroup.init(in)
+	def present(out : Array[Byte]) = {
+		out.grouped(2).toList.map{h => h.map{"%02X".format(_)}.mkString}.mkString(":")
+	}
 }
