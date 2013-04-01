@@ -7,6 +7,7 @@ import com.twitter.chill._
 object AlgebirdAggregators extends Registrar {
 	register("hll", 12){new HyperLogLog(_)}
 	register("mh", 64){new MinHash(_)}
+	register("top", 10){new Top(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -45,5 +46,17 @@ class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
 	def prepare(in : String) = semigroup.init(in)
 	def present(out : Array[Byte]) = {
 		out.grouped(2).toList.map{h => h.map{"%02X".format(_)}.mkString}.mkString(":")
+	}
+}
+
+class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
+	val semigroup = new TopKMonoid[(Double,String)](k)
+	def prepare(in : String) = {
+		val (score, item) = Main.split(in, ":").get
+		semigroup.build((score.toDouble*-1, item))
+	}
+
+	def present(out : TopK[(Double,String)]) = {
+		out.items.map{case (score,item) => (score * -1).toString + ":" + item}.mkString(",")
 	}
 }
