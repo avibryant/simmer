@@ -20,19 +20,19 @@ Although the default implementation reads from stdin and writes to stdout, it wo
 
 #Aggregator specs
 
-*l* sums of long values
-*lmin* min long value
-*lmax* max long value
-*hll* unique values (note: append an integer to change the number of bits used, eg hll4 vs. hll12)
-*mh* minhash signatures (note: append an integer to change the number of hashes used, eg mh100 vs mh300)
-*top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
+* *l* sums of long values
+* *lmin* min long value
+* *lmax* max long value
+* *hll* unique values (note: append an integer to change the number of bits used, eg hll4 vs. hll12)
+* *mh* minhash signatures (note: append an integer to change the number of hashes used, eg mh100 vs mh300)
+* *top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
 
 #Aggregator TODO
 
 Let me know which of these would be interesting:
 
-*hh* heavy hitters (items which show up more than X% of the time)
-*exp* exponentially decaying values (expects values to be in the format timestamp:value)
-*mom* the statistical moments
-*hist* a binned histogram
-*pct* a percentile estimator (eg pct5, pct95, pct50 for median)
+* *hh* heavy hitters (items which show up more than X% of the time)
+* *exp* exponentially decaying values (expects values to be in the format timestamp:value)
+* *mom* the statistical moments
+* *hist* a binned histogram
+* *pct* a percentile estimator (eg pct5, pct95, pct50 for median)
