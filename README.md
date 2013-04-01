@@ -17,3 +17,22 @@ The output format will include two lines for each unique key in the input, also 
 The reason for including the machine readable values is so that multiple outputs can be combined (eg with cat) and piped back into algescrubber. The human readable lines will be ignored. You can freely mix pre-aggregated output and new inputs for the same keys.
 
 Although the default implementation reads from stdin and writes to stdout, it would be straightforward to add a new driver class that, for example, sinks the output into a Redis or Mongo instance that is maintaining overall aggregations for these keys.
+
+#Aggregator specs
+
+*l* sums of long values
+*lmin* min long value
+*lmax* max long value
+*hll* unique values (note: append an integer to change the number of bits used, eg hll4 vs. hll12)
+*mh* minhash signatures (note: append an integer to change the number of hashes used, eg mh100 vs mh300)
+*top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
+
+#Aggregator TODO
+
+Let me know which of these would be interesting:
+
+*hh* heavy hitters (items which show up more than X% of the time)
+*exp* exponentially decaying values (expects values to be in the format timestamp:value)
+*mom* the statistical moments
+*hist* a binned histogram
+*pct* a percentile estimator (eg pct5, pct95, pct50 for median)
