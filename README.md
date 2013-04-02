@@ -2,12 +2,12 @@ This works much like [Hadoop streaming's Aggregate package](http://hadoop.apache
 
 To build:
 ````
-mvn compile
+mvn package
 ````
 
 To run:
 ````
-mvn -q exec:java < /path/to/data.tsv
+bin/scrub < /path/to/data.tsv
 ````
 
 The input format expects each line to contain one key and one value, separated by a tab. The key should be prefixed by an aggregation spec that algescrubber recognizes. This will determine how all of the values that share that key will be combined. For example, the spec "l" will simply treat the values as long integers and sum them. The spec "hll" will use the HyperLogLog algorithm to produce an estimate of the number of unique values for that key. See below for a list of all of the specs that are currently defined.
@@ -26,13 +26,13 @@ Although the default implementation reads from stdin and writes to stdout, it wo
 * *hll* unique values (note: append an integer to change the number of bits used, eg hll4 vs. hll12)
 * *mh* minhash signatures (note: append an integer to change the number of hashes used, eg mh100 vs mh300)
 * *top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
+* *hist* produce a histogram of the value frequencies. Expects values to be quantized into a reasonable range (eg thousands not millions) of integer values. Output is of the form value:count,value:count,value:count.
+* *pct* percentile; makes the same quantization assumptions as hist; produces the median by default, but use pct95, pct5 etc for other percentiles. Eventually it would be nice to remove the quantization restriction here.
 
 #Aggregator TODO
 
-Let me know which of these would be interesting:
+Let me know if any of these would be interesting:
 
 * *hh* heavy hitters (items which show up more than X% of the time)
 * *exp* exponentially decaying values (expects values to be in the format timestamp:value)
 * *mom* the statistical moments
-* *hist* a binned histogram
-* *pct* a percentile estimator (eg pct5, pct95, pct50 for median)

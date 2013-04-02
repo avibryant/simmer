@@ -8,6 +8,8 @@ object AlgebirdAggregators extends Registrar {
 	register("hll", 12){new HyperLogLog(_)}
 	register("mh", 64){new MinHash(_)}
 	register("top", 10){new Top(_)}
+	register("hist", new Histogram)
+	register("pct", 50){new Percentile(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -58,5 +60,21 @@ class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 
 	def present(out : TopK[(Double,String)]) = {
 		out.items.map{case (score,item) => (score * -1).toString + ":" + item}.mkString(",")
+	}
+}
+
+class Histogram extends KryoAggregator[Map[Int,Int]] {
+	val semigroup = implicitly[Semigroup[Map[Int,Int]]]
+	def prepare(in : String) = Map(in.toInt -> 1)
+	def present(out : Map[Int,Int]) = out.keys.toList.sorted.map{k => k.toString + ":" + out(k)}.mkString(",")
+}
+
+class Percentile(pct : Int) extends Histogram {
+	override def present(out : Map[Int,Int]) = {
+		val sum = out.values.sum
+		val target = sum.toDouble * pct / 100
+		val sortedKeys = out.keys.toList.sorted
+		val cumulative = sortedKeys.scanLeft(0){(acc,k) => acc+out(k)}
+		sortedKeys.zip(cumulative.tail).find{_._2 >= target}.map{_._1}.getOrElse(0).toString
 	}
 }
