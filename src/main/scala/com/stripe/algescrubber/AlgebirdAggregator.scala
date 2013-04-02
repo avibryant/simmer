@@ -53,7 +53,7 @@ class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 	val semigroup = new TopKMonoid[(Double,String)](k)
 	def prepare(in : String) = {
 		val (score, item) = Main.split(in, ":").get
-		semigroup.build((score.toDouble*-1, item))
+		semigroup.build((score.toDouble * -1, item))
 	}
 
 	def present(out : TopK[(Double,String)]) = {
