@@ -6,20 +6,18 @@ object Main {
 		BasicAggregators.load
 		AlgebirdAggregators.load
 
-		val scrubber = new Scrubber(StdOutput)
+		val scrubber = new Scrubber
 
     	for(line <- io.Source.stdin.getLines) {
     		for((fullKey, value) <- split(line, "\t")) {
 	    		for((aggKey, valueKey) <- split(fullKey, ":")) {
-		    		scrubber.get(aggKey) match {
-		    			case Some(table) => table.update(valueKey, value)
-		    			case None => error("Could not find aggregator of type " + aggKey)
-		    		}
+	    			scrubber.update(aggKey, valueKey, value)
 		    	}
 		    }
 	   	}
 
-	   	scrubber.flush
+	   	scrubber.flush(StdOutput)
+	   	System.exit(0)
 	}
 
 	def split(str : String, delim : String) = {
