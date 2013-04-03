@@ -6,7 +6,7 @@ object Main {
 		BasicAggregators.load
 		AlgebirdAggregators.load
 
-		val scrubber = new Scrubber
+		val scrubber = new ParallelScrubber
 
     	for(line <- io.Source.stdin.getLines) {
     		for((fullKey, value) <- split(line, "\t")) {
