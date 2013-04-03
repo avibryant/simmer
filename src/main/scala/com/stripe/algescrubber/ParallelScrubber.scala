@@ -12,6 +12,8 @@ class ParallelScrubber(nShards : Int = 16) {
 //		if(count % 10000 == 0)
 //			System.err.println(count + " items")
 
+    	System.err.println("updating " + valueKey)
+
 		val mainShardIndex = (valueKey.hashCode % nShards + nShards) % nShards
 		if(!shards(mainShardIndex).queue.offer((aggKey, valueKey, value)))
 			shards(rand.nextInt(nShards)).queue.put((aggKey, valueKey, value))
@@ -21,6 +23,8 @@ class ParallelScrubber(nShards : Int = 16) {
 	def flush(output : Output) {
 		while(shards.exists{_.queue.size > 0})
 			Thread.sleep(100)
+
+		System.err.println("flushing")
 
 		val mergeOutput = new MergeOutput
 		shards.foreach{_.scrubber.flush(mergeOutput)}
@@ -45,6 +49,7 @@ class MergeOutput extends Output {
 	val scrubber = new Scrubber
 
     def write[A](valueKey : String, value : A, aggKey : String, aggregator : Aggregator[A]) {
+    	System.err.println("merging " + valueKey)
     	scrubber.update(aggKey, valueKey, aggregator.serialize(value))
     }
 
