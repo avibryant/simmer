@@ -10,6 +10,8 @@ object AlgebirdAggregators extends Registrar {
 	register("top", 10){new Top(_)}
 	register("hist", new Histogram)
 	register("pct", 50){new Percentile(_)}
+	register("hash", 10){new HashingTrick(_)}
+
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -76,5 +78,21 @@ class Percentile(pct : Int) extends Histogram {
 		val sortedKeys = out.keys.toList.sorted
 		val cumulative = sortedKeys.scanLeft(0){(acc,k) => acc+out(k)}
 		sortedKeys.zip(cumulative.tail).find{_._2 >= target}.map{_._1}.getOrElse(0).toString
+	}
+}
+
+class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
+	val semigroup = new HashingTrickMonoid[Double](bits)
+	def prepare(in : String) = {
+		if(in.contains(":")) {
+			val (key, value) = Main.split(in, ":").get
+			semigroup.init(key.getBytes, value.toDouble)
+		} else {
+			semigroup.init(in.getBytes, 1.0)
+		}
+	}
+
+	def present(out : AdaptiveVector[Double]) = {
+		out.mkString(",")
 	}
 }
