@@ -28,7 +28,7 @@ Although the default implementation reads from stdin and writes to stdout, it wo
 * *top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
 * *hist* produce a histogram of the value frequencies. Expects values to be quantized into a reasonable range (eg thousands not millions) of integer values. Output is of the form value:count,value:count,value:count.
 * *pct* percentile; makes the same quantization assumptions as hist; produces the median by default, but use pct95, pct5 etc for other percentiles. Eventually it would be nice to remove the quantization restriction here.
-
+* *hash* feature hashing. Input should either be a word (of a bag of words feature) or a dimension:value where value is a double. (append an integer for number of hash bits; hash10 is default, try hash4 or hash12 etc).
 #Aggregator TODO
 
 Let me know if any of these would be interesting:
