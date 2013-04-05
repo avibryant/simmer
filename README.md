@@ -28,11 +28,11 @@ Although the default implementation reads from stdin and writes to stdout, it wo
 * *top* top K items; expects values to be in the format score:item (note: top10 by default, try top5, top20, etc)
 * *hist* produce a histogram of the value frequencies. Expects values to be quantized into a reasonable range (eg thousands not millions) of integer values. Output is of the form value:count,value:count,value:count.
 * *pct* percentile; makes the same quantization assumptions as hist; produces the median by default, but use pct95, pct5 etc for other percentiles. Eventually it would be nice to remove the quantization restriction here.
+* *dcy* exponential decay; input needs to be in the format timestamp:value. Append an integer to set the halflife, default is one day (dcy86400). Output will be the value as of the end of the current day.
 
 #Aggregator TODO
 
 Let me know if any of these would be interesting:
 
 * *hh* heavy hitters (items which show up more than X% of the time)
-* *exp* exponentially decaying values (expects values to be in the format timestamp:value)
 * *mom* the statistical moments
