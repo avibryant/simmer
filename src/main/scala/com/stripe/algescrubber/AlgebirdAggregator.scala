@@ -83,7 +83,6 @@ class Percentile(pct : Int) extends Histogram {
 	}
 }
 
-<<<<<<< HEAD
 class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	val semigroup = new HashingTrickMonoid[Double](bits)
 	def prepare(in : String) = {
@@ -98,7 +97,8 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	def present(out : AdaptiveVector[Double]) = {
 		out.mkString(",")
 	}
-=======
+}
+
 class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 	val semigroup = DecayedValue.monoidWithEpsilon(0.000001)
 	def prepare(in : String) = {
@@ -120,5 +120,4 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 		val adjusted = semigroup.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
 		adjusted.value.toString
 	} 
->>>>>>> master
 }
