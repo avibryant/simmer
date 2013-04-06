@@ -3,6 +3,8 @@ package com.stripe.algescrubber
 import com.twitter.algebird._
 import com.twitter.bijection._
 import com.twitter.chill._
+import java.util.Calendar._
+import java.util.GregorianCalendar
 
 object AlgebirdAggregators extends Registrar {
 	register("hll", 12){new HyperLogLog(_)}
@@ -11,7 +13,7 @@ object AlgebirdAggregators extends Registrar {
 	register("hist", new Histogram)
 	register("pct", 50){new Percentile(_)}
 	register("hash", 10){new HashingTrick(_)}
-
+	register("dcy", 86400){new Decay(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -81,6 +83,7 @@ class Percentile(pct : Int) extends Histogram {
 	}
 }
 
+<<<<<<< HEAD
 class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	val semigroup = new HashingTrickMonoid[Double](bits)
 	def prepare(in : String) = {
@@ -95,4 +98,27 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	def present(out : AdaptiveVector[Double]) = {
 		out.mkString(",")
 	}
+=======
+class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
+	val semigroup = DecayedValue.monoidWithEpsilon(0.000001)
+	def prepare(in : String) = {
+		val (timestamp, value) = Main.split(in, ":").get
+		DecayedValue.build(value.toDouble, timestamp.toDouble, halflife.toDouble)
+	}
+
+	def timestampAsOfEndOfDay = {
+		val calendar = new GregorianCalendar
+		calendar.add(DATE, 1)
+    	calendar.set(HOUR_OF_DAY, 0)
+    	calendar.set(MINUTE, 0)
+    	calendar.set(SECOND, 0)
+    	calendar.set(MILLISECOND, 0)
+		calendar.getTimeInMillis / 1000
+	}
+
+	def present(out : DecayedValue) = {
+		val adjusted = semigroup.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
+		adjusted.value.toString
+	} 
+>>>>>>> master
 }
