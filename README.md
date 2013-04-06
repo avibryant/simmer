@@ -1,6 +1,13 @@
 This works much like [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), except that it provides access to [Algebird](http://github.com/twitter/algebird)'s suite of aggregators. It can also be used directly from the unix shell, as a filter in a pipeline.
 
 To build:
+
+First time:
+* Checkout, build, and publish-local the latest develop version of https://github.com/avibryant/algebird .
+* Run the install-algebird-snapshot.rb script
+
+From then on:
+
 ````
 mvn package
 ````
