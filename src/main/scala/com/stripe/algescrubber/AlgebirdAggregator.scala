@@ -15,6 +15,7 @@ object AlgebirdAggregators extends Registrar {
 	register("hash", 10){new HashingTrick(_)}
 	register("dcy", 86400){new Decay(_)}
 	register("hh", 10){new HeavyHitters(_)}
+	register("hhll", 10){new HeavyHittersHyperLogLog(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -128,5 +129,23 @@ class HeavyHitters(k : Int) extends KryoAggregator[SketchMap[String, Int]] {
 	val semigroup = new SketchMapMonoid[String,Int](100,5,123456,k)
 
 	def prepare(in : String) = semigroup.create(in, 1)
-	def present(out : SketchMap[String, Int]) = out.heavyHitters.map{case (k,v) => k + ":" + v.toString}.mkString(",")
+	def present(out : SketchMap[String, Int]) = {
+		out.heavyHitters.map{case (k,v) => k + ":" + v.toString}.mkString(",")
+	}
+}
+
+class HeavyHittersHyperLogLog(k : Int) extends KryoAggregator[SketchMap[String, HLL]] {
+	implicit val str2Bytes = (x : String) => x.getBytes
+	implicit val hllMonoid = new HyperLogLogMonoid(6)
+	implicit val hllOrdering = Ordering.by[HLL,Double]{_.estimatedSize}
+	val semigroup = new SketchMapMonoid[String,HLL](100,5,123456,k)
+
+	def prepare(in : String) = {
+		val (key, value) = Main.split(in, ":").get
+		semigroup.create(key, hllMonoid.create(value))
+	}
+
+	def present(out : SketchMap[String, HLL]) = {
+		out.heavyHitters.map{case (k,v) => k + ":" + v.estimatedSize.toInt.toString}.mkString(",")
+	}
 }

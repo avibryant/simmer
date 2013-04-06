@@ -31,3 +31,4 @@ Although the default implementation reads from stdin and writes to stdout, it wo
 * *hash* feature hashing. Input should either be a word (of a bag of words feature) or a dimension:value where value is a double. (append an integer for number of hash bits; hash10 is default, try hash4 or hash12 etc).
 * *dcy* exponential decay; input needs to be in the format timestamp:value. Append an integer to set the halflife, default is one day (dcy86400). Output will be the value as of the end of the current day.
 * *hh* heavy hitters; keeps the top K values by frequency (note: hh10 is default, try hh3, hh20 etc).
+* *hhll* unique heavy hitters; expects values to be in the format a:b; will keep the top a's by number of unique b's associated with them.
