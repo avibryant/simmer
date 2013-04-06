@@ -14,6 +14,7 @@ object AlgebirdAggregators extends Registrar {
 	register("pct", 50){new Percentile(_)}
 	register("hash", 10){new HashingTrick(_)}
 	register("dcy", 86400){new Decay(_)}
+	register("hh", 10){new HeavyHitters(_)}
 }
 
 trait AlgebirdAggregator[A] extends Aggregator[A] {
@@ -120,4 +121,12 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 		val adjusted = semigroup.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
 		adjusted.value.toString
 	} 
+}
+
+class HeavyHitters(k : Int) extends KryoAggregator[SketchMap[String, Int]] {
+	implicit val str2Bytes = (x : String) => x.getBytes
+	val semigroup = new SketchMapMonoid[String,Int](100,5,123456,k)
+
+	def prepare(in : String) = semigroup.create(in, 1)
+	def present(out : SketchMap[String, Int]) = out.heavyHitters.map{case (k,v) => k + ":" + v.toString}.mkString(",")
 }
