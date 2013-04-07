@@ -76,3 +76,29 @@ sum:x	3
 Algescrubber will ignore the commented lines on input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
 ###Aggregations
+
+<table>
+<tr>
+<th>Prefix</th>
+<th>Description</th>
+<th>Parameter</th>
+<th>Default</th>
+<th>Sample input</th>
+<th>Sample output</th>
+</tr>
+<tr>
+<th>sum</th>
+<td>Numeric sum</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><pre>sum:x 1
+sum:x 2
+</pre>
+</td>
+<td><pre>
+sum:x 3
+</pre>
+</td>
+</tr>
+</tr>
+</table>
