@@ -75,7 +75,9 @@ sum:x	3
 
 Algescrubber will ignore the commented lines on input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
-###Aggregations
+###Numeric Aggregations
+
+The human-readable output of these is always a single number for each key.
 
 <table>
 <tr>
@@ -86,9 +88,10 @@ Algescrubber will ignore the commented lines on input. It will also distinguish 
 <th>Sample input</th>
 <th>Sample output</th>
 </tr>
+
 <tr>
 <th>sum</th>
-<td>Numeric sum</td>
+<td>Sum</td>
 <td>n/a</td>
 <td>n/a</td>
 <td><pre>sum:x 1
@@ -100,5 +103,148 @@ sum:x 3
 </pre>
 </td>
 </tr>
+
+<tr>
+<th>min</th>
+<td>Minimum</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><pre>min:x 1
+min:x 2
+</pre>
+</td>
+<td><pre>
+min:x 1
+</pre>
+</td>
 </tr>
+
+<tr>
+<th>min</th>
+<td>Maximum</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><pre>max:x 1
+max:x 2
+</pre>
+</td>
+<td><pre>
+max:x 2
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>uv</th>
+<td>Unique values<br>(estimated using the HyperLogLog algorithm)</td>
+<td>number of hash bits - memory use is 2^n</td>
+<td>uv12</td>
+<td><pre>hll:x a
+hll:x b
+hll:x a
+</pre>
+</td>
+<td><pre>
+hll:x 2
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>pct</th>
+<td>Percentile<br></td>
+<td>which percentile to output</td>
+<td>pct50 (ie median)</td>
+<td>For now, data should be quantized to a reasonable number of integer bins.
+<pre>pct50:x 2
+pct50:x 4
+pct50:x 100
+</pre>
+</td>
+<td><pre>
+pct50:x 4
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>dcy</th>
+<td>Exponentially decayed sum<br></td>
+<td>half-life of a value, in seconds</td>
+<td>dcy86400 (ie, half-life of one day)</td>
+<td>Data should be in the format timestamp:value.
+<pre>dcy:x   1365187171:100
+dcy:x   1365100771:100
+dcy:x   1365014371:100
+</pre>
+</td>
+<td>Human-readable output will be the decayed value as of the end of the current day.
+<pre>
+dcy:y 122.3
+</pre>
+</td>
+</tr>
+</table>
+
+###Other Aggregations
+
+These are more specialized than, or build in some way on, the numeric aggregations.
+
+<table>
+<tr>
+<th>Prefix</th>
+<th>Description</th>
+<th>Parameter</th>
+<th>Default</th>
+<th>Sample input</th>
+<th>Sample output</th>
+</tr>
+
+<tr>
+<th>top</th>
+<td>Top K<br>(by any numeric aggregation)</td>
+<td>how many top values to retain</td>
+<td>top10</td>
+<td><pre>
+</pre>
+</td>
+<td><pre>
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>mh</th>
+<td>Min-Hash Signature<br>(Used for estimating set similarity)</td>
+<td>number of hashes to use</td>
+<td>mh64</td>
+<td><pre>mh:x    a
+mh:x    b
+mh:x    c
+</pre>
+</td>
+<td><pre>
+mh:x 0FCC:2E1F:0DD7:0049:3BF3:10D4:6460:75D4:392B:07AF:2064:27F0:6931:6717:3A0A:16D9:122E:51C6:8632:64BD:0CAE:0D15:8357:39A5:2008:4ED7:5733:44F8:1F70:02F7:23D5:59AE:0ECB:8EE0:4E1C:0249:9804:610B:0DBD:0316
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>fh</th>
+<td>Feature Hashing<br>(projects any number of features into a fixed-size vector)</td>
+<td>number of hash bits to use (output vector size will be 2^n)</td>
+<td>fh10</td>
+<td>Values can either be just a token, for categorical features, or token:number for continuous features.
+<pre>fh4:x    hello
+fh4:x    world
+fh4:x    temp:32
+</pre>
+</td>
+<td><pre>
+fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
+</pre>
+</td>
+</tr>
+
+
 </table>
