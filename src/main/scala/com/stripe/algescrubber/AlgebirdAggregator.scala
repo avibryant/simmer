@@ -7,21 +7,28 @@ import java.util.Calendar._
 import java.util.GregorianCalendar
 
 object AlgebirdAggregators extends Registrar {
-	register("hll", 12){new HyperLogLog(_)}
+	register("sum", DoubleSum)
+	register("max", DoubleMax)
+	register("min", DoubleMin)
+	register("uv", 12){new HyperLogLog(_)}
 	register("mh", 64){new MinHash(_)}
-	register("top", 10){new Top(_)}
-	register("hist", new Histogram)
 	register("pct", 50){new Percentile(_)}
-	register("hash", 10){new HashingTrick(_)}
+	register("fh", 10){new HashingTrick(_)}
 	register("dcy", 86400){new Decay(_)}
-	register("hh", 10){new HeavyHitters(_)}
-	register("hhll", 10){new HeavyHittersHyperLogLog(_)}
 }
 
-trait AlgebirdAggregator[A] extends Aggregator[A] {
+trait MonoidAggregator[A] extends Aggregator[A] {
+	def monoid : Monoid[A]
+	def reduce(left : A, right : A) = monoid.plus(left, right)
+}	
+
+trait NumericAggregator[A] extends MonoidAggregator[A] {
+	def presentNumeric(value : A) : Double
+}
+
+trait AlgebirdAggregator[A] extends MonoidAggregator[A] {
 	val MAGIC = "%%%"
 
-	def semigroup : Semigroup[A]
 	def injection : Injection[A, String]
 
 	def serialize(value : A) = MAGIC + injection(value)
@@ -31,8 +38,6 @@ trait AlgebirdAggregator[A] extends Aggregator[A] {
 		else
 			None
 	}
-
-	def reduce(left : A, right : A) = semigroup.plus(left, right)
 }
 
 trait KryoAggregator[A] extends AlgebirdAggregator[A] {
@@ -42,26 +47,52 @@ trait KryoAggregator[A] extends AlgebirdAggregator[A] {
   	Base64String.unwrap
 }
 
+trait DoubleAggregator extends NumericAggregator[Double] {
+	def prepare(in : String) = in.toDouble
+	def serialize(value : Double) = value.toString
+	def deserialize(serialized : String) = Some(serialized.toDouble)
+	def present(value : Double) = value.toString
+	def presentNumeric(value : Double) = value
+}
+
+object DoubleSum extends DoubleAggregator {
+	val monoid = implicitly[Monoid[Double]]
+}
+
+object DoubleMax extends DoubleAggregator {
+	val monoid = new Monoid[Double] {
+		val zero = Double.MinValue
+		def plus(left : Double, right: Double) = left.max(right)
+	}
+}
+
+object DoubleMin extends DoubleAggregator {
+	val monoid = new Monoid[Double] {
+		val zero = Double.MaxValue
+		def plus(left : Double, right: Double) = left.min(right)
+	}
+}
+
 class HyperLogLog(size : Int) extends KryoAggregator[HLL] {
-  val semigroup = new HyperLogLogMonoid(size)
-  def prepare(in : String) = semigroup.create(in.getBytes)
+  val monoid = new HyperLogLogMonoid(size)
+  def prepare(in : String) = monoid.create(in.getBytes)
   def present(out : HLL) = out.estimatedSize.toInt.toString
 }
 
 class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
-	val semigroup = new MinHasher16(0.1, hashes * 2)
+	val monoid = new MinHasher16(0.1, hashes * 2)
 	val injection = Bijection.bytes2Base64 andThen Base64String.unwrap
-	def prepare(in : String) = semigroup.init(in)
+	def prepare(in : String) = monoid.init(in)
 	def present(out : Array[Byte]) = {
 		out.grouped(2).toList.map{h => h.map{"%02X".format(_)}.mkString}.mkString(":")
 	}
 }
 
 class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
-	val semigroup = new TopKMonoid[(Double,String)](k)
+	val monoid = new TopKMonoid[(Double,String)](k)
 	def prepare(in : String) = {
 		val (score, item) = Main.split(in, ":").get
-		semigroup.build((score.toDouble * -1, item))
+		monoid.build((score.toDouble * -1, item))
 	}
 
 	def present(out : TopK[(Double,String)]) = {
@@ -69,14 +100,10 @@ class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 	}
 }
 
-class Histogram extends KryoAggregator[Map[Int,Int]] {
-	val semigroup = implicitly[Semigroup[Map[Int,Int]]]
+class Percentile(pct : Int) extends KryoAggregator[Map[Int,Int]] {
+	val monoid = implicitly[Monoid[Map[Int,Int]]]
 	def prepare(in : String) = Map(in.toInt -> 1)
-	def present(out : Map[Int,Int]) = out.keys.toList.sorted.map{k => k.toString + ":" + out(k)}.mkString(",")
-}
-
-class Percentile(pct : Int) extends Histogram {
-	override def present(out : Map[Int,Int]) = {
+	def present(out : Map[Int,Int]) = {
 		val sum = out.values.sum
 		val target = sum.toDouble * pct / 100
 		val sortedKeys = out.keys.toList.sorted
@@ -86,13 +113,13 @@ class Percentile(pct : Int) extends Histogram {
 }
 
 class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
-	val semigroup = new HashingTrickMonoid[Double](bits)
+	val monoid = new HashingTrickMonoid[Double](bits)
 	def prepare(in : String) = {
 		if(in.contains(":")) {
 			val (key, value) = Main.split(in, ":").get
-			semigroup.init(key.getBytes, value.toDouble)
+			monoid.init(key.getBytes, value.toDouble)
 		} else {
-			semigroup.init(in.getBytes, 1.0)
+			monoid.init(in.getBytes, 1.0)
 		}
 	}
 
@@ -102,7 +129,7 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 }
 
 class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
-	val semigroup = DecayedValue.monoidWithEpsilon(0.000001)
+	val monoid = DecayedValue.monoidWithEpsilon(0.000001)
 	def prepare(in : String) = {
 		val (timestamp, value) = Main.split(in, ":").get
 		DecayedValue.build(value.toDouble, timestamp.toDouble, halflife.toDouble)
@@ -119,33 +146,23 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 	}
 
 	def present(out : DecayedValue) = {
-		val adjusted = semigroup.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
+		val adjusted = monoid.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
 		adjusted.value.toString
 	} 
 }
 
-class HeavyHitters(k : Int) extends KryoAggregator[SketchMap[String, Int]] {
+class HeavyHitters[A](k : Int, inner : NumericAggregator[A]) extends KryoAggregator[SketchMap[String, A]] {
 	implicit val str2Bytes = (x : String) => x.getBytes
-	val semigroup = new SketchMapMonoid[String,Int](100,5,123456,k)
-
-	def prepare(in : String) = semigroup.create(in, 1)
-	def present(out : SketchMap[String, Int]) = {
-		out.heavyHitters.map{case (k,v) => k + ":" + v.toString}.mkString(",")
-	}
-}
-
-class HeavyHittersHyperLogLog(k : Int) extends KryoAggregator[SketchMap[String, HLL]] {
-	implicit val str2Bytes = (x : String) => x.getBytes
-	implicit val hllMonoid = new HyperLogLogMonoid(6)
-	implicit val hllOrdering = Ordering.by[HLL,Double]{_.estimatedSize}
-	val semigroup = new SketchMapMonoid[String,HLL](100,5,123456,k)
+	implicit val innerMonoid = inner.monoid
+	implicit val ordering = Ordering.by{a : A => inner.presentNumeric(a)}
+	val monoid = new SketchMapMonoid[String,A](100,5,123456,k)
 
 	def prepare(in : String) = {
 		val (key, value) = Main.split(in, ":").get
-		semigroup.create(key, hllMonoid.create(value))
+		monoid.create(key, inner.prepare(value))
 	}
 
-	def present(out : SketchMap[String, HLL]) = {
-		out.heavyHitters.map{case (k,v) => k + ":" + v.estimatedSize.toInt.toString}.mkString(",")
+	def present(out : SketchMap[String, A]) = {
+		out.heavyHitters.map{case (k,v) => k + ":" + inner.present(v)}.mkString(",")
 	}
 }

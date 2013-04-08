@@ -2,8 +2,8 @@ package com.stripe.algescrubber
 
 trait Aggregator[A] {
 	def createTable = new Table(this)
-	def prepare(input : String) : A
 	def reduce(left : A, right : A) : A
+	def prepare(input : String) : A
 	def serialize(value : A) : String
 	def deserialize(serialized : String) : Option[A]
 	def present(value : A) : String

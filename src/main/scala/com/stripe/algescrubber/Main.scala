@@ -3,7 +3,6 @@ package com.stripe.algescrubber
 object Main {
 	def main(args : Array[String]) {
 
-		BasicAggregators.load
 		AlgebirdAggregators.load
 
 		val scrubber = new Scrubber
