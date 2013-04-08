@@ -3,10 +3,10 @@ Avi Bryant
 
 Algescrubber is a streaming aggregation tool. It can be used as a filter in a unix pipeline, and with Hadoop or similar systems, to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the aggregations it supports include:
 * counts of unique values
-* exponential moving averages
+* exponentially decaying values
 * top k most frequent values
-* statistical moments
 * percentiles
+* min-hash signatures
 
 It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), but uses the probabalistic aggregation algorithms from Twitter's [Algebird](http://github.com/twitter/algebird). It's not to be confused with an [algae scrubber](http://i611.photobucket.com/albums/tt191/FloydRTurbo/2011%20Aquarium%20Pics/Miscellaneous/ATS%20Designs/AS_teboLED-2.jpg), which is an entirely different kind of filter.
 
@@ -203,8 +203,21 @@ These are more specialized than, or build in some way on, the numeric aggregatio
 <tr>
 <th>top</th>
 <td>Top K<br>(by any numeric aggregation)</td>
-<td>how many top values to retain</td>
+<td>how many top values to retain <br> also requires a secondary prefix (see example)</td>
 <td>top10</td>
+<td>...<pre>
+</pre>
+</td>
+<td><pre>
+</pre>
+</td>
+</tr>
+
+<tr>
+<th>bot</th>
+<td>Bottom K<br>(by any numeric aggregation)</td>
+<td>works just like top</td>
+<td>bot10</td>
 <td><pre>
 </pre>
 </td>
@@ -218,12 +231,12 @@ These are more specialized than, or build in some way on, the numeric aggregatio
 <td>Min-Hash Signature<br>(Used for estimating set similarity)</td>
 <td>number of hashes to use</td>
 <td>mh64</td>
-<td><pre>mh:x    a
+<td>Each value should be a single element of the set represented by the key.<pre>mh:x    a
 mh:x    b
 mh:x    c
 </pre>
 </td>
-<td><pre>
+<td>Hex representation of n 16-bit hashes.  If two sets have k matching hash values, their jaccard similarity = k/n.<pre>
 mh:x 0FCC:2E1F:0DD7:0049:3BF3:10D4:6460:75D4:392B:07AF:2064:27F0:6931:6717:3A0A:16D9:122E:51C6:8632:64BD:0CAE:0D15:8357:39A5:2008:4ED7:5733:44F8:1F70:02F7:23D5:59AE:0ECB:8EE0:4E1C:0249:9804:610B:0DBD:0316
 </pre>
 </td>
@@ -246,5 +259,16 @@ fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
 </td>
 </tr>
 
-
 </table>
+
+###Aggregations TODO
+
+* Exponential moving average (this is just decaying sum / decaying count, but worth having)
+* Statistical moments - mean, variance, skew, kurtosis. As a single aggregation or as 4?
+* F2 (measure of key frequency skew... too specialized?)
+* Remove the quantization requirement for percentiles (?)
+
+###Other TODO
+
+* Configurable incremental flushing for realtime querying
+* Flushing to key/value store (redis, mongo, mysql?)
