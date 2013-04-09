@@ -140,7 +140,7 @@ min:x 1
 </tr>
 
 <tr>
-<th>min</th>
+<th>max</th>
 <td>Maximum</td>
 <td>n/a</td>
 <td>n/a</td>
