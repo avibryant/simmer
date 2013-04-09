@@ -21,7 +21,7 @@ sbt publish-local
 cd ..
 git clone git://github.com/avibryant/algescrubber.git
 cd algescrubber
-./install-algebird-snapshot.rb
+bin/install-algebird-snapshot.rb
 ````
 
 From then on:
@@ -220,9 +220,9 @@ These are more specialized than, or build in some way on, the numeric aggregatio
 <tr>
 <th>top</th>
 <td>Top K<br>(by any numeric aggregation)</td>
-<td>how many top values to retain <br> also requires a secondary prefix (see example)</td>
+<td>how many top values to retain <br>(also requires a secondary prefix - see example)</td>
 <td>top10</td>
-<td>For example, this will find the top 3 items by the sum of their values, assuming an item:value format<pre>
+<td>This will find the top 3 items by the sum of their values, assuming an item:value format<pre>
 top3:sum:x	a:1
 top3:sum:x	b:2
 top3:sum:x	a:2
@@ -230,7 +230,7 @@ top3:sum:x	c:1
 top3:sum:x	d:3
 </pre>
 
-However, top10:uv:x, or top5:pct95:x, and so on, would also be valid keys.
+However, top10:uv:x, or top5:pct95:x, or top + any other numeric aggregation, would also be valid keys.
 </td>
 <td><pre>
 top3:sum:x	a:3,d:3,b:2
