@@ -53,7 +53,7 @@ min:y	3
 And here are the keys and values of the output:
 
 ````
-sum:x	2
+sum:x	3
 min:y	3
 ````
 
