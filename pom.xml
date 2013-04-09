@@ -44,7 +44,7 @@
                 <configuration>
                     <mainClass>com.stripe.algescrubber.Main</mainClass>
                     <arguments>
-                        <argument>argument1</argument>
+                        <argument>1000</argument>
                     </arguments>
                 </configuration>
             </plugin>

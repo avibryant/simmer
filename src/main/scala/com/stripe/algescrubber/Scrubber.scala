@@ -41,6 +41,7 @@ class Scrubber(output : Output, capacity : Int, flushEvery : Int) {
 
     def flush {
         accumulators.asScala.foreach{case (key,acc) => acc.write(key, output)}
+        accumulators.clear
     }
 }
 

@@ -11,9 +11,9 @@ object Main {
 		val scrubber = new Scrubber(StdOutput, capacity, flushEvery)
 
     	for(line <- io.Source.stdin.getLines) {
-    		for((key, value) <- split(line, "\t")) {
-	    		scrubber.update(key, value)
-		    }
+    		val columns = line.split("\t")
+    		if(columns.size > 1)
+	    		scrubber.update(columns(0), columns(1))
 	   	}
 
 	   	scrubber.flush
@@ -23,7 +23,6 @@ object Main {
 
 object StdOutput extends Output {
 	def write[A](key : String, value : A, aggregator : Aggregator[A]) {
-		println(key + "\t" + aggregator.serialize(value))
-		println("#" + key + "\t" + aggregator.present(value))
+		println(key + "\t" + aggregator.serialize(value) + "\t" + aggregator.present(value))
 	}
 }

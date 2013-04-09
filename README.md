@@ -64,16 +64,20 @@ Many of the aggregations can be parameterized by including an integer in the pre
 
 ###Output format
 
-The output is, like the input format, a tab-separated key-value stream. The output  is designed to be easy to read by humans, while at the same time allowing multiple outputs to be combined and fed back into scrub for further aggregation. As a simple example of how these are in conflict, consider an aggregation producing the average of all of the values for a key. The human-readable output is just a single number, the average. To properly combine multiple averages, however, you have to know the count of how many values originally went into each one, so that you can weight them properly. Algescrubber solves this by producing two lines for each key, one with a possibly opaque, machine-readable value that is suitable for further aggregation, and the other as a "comment", prefixed with the # character, that includes a human-readable version of the value. Often, it's convenient to filter scrub's output through "grep ^#" to see only the human-readable versions.
+The output is, like the input format, a tab-separated key-value stream. The output is designed to be easy to read by humans, while at the same time allowing multiple outputs to be combined and fed back into scrub for further aggregation. As a simple example of how these are in conflict, consider an aggregation producing the average of all of the values for a key. The human-readable output is just a single number, the average. To properly combine multiple averages, however, you have to know the count of how many values originally went into each one, so that you can weight them properly. Algescrubber solves this by producing two values for each key, one with a possibly opaque, machine-readable value that is suitable for further aggregation, and another that includes a human-readable version of the value. Often, it's convenient to filter scrub's output through "cut -f 1,3" to see only the human-readable versions.
 
 For simple cases like sum, the human-readable and machine-readable formats are identical, so the output looks like this:
 
 ````sh
-# sum:x	3
-sum:x	3
+sum:x	3	3
 ````
 
-Algescrubber will ignore the commented lines on input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
+For other aggregations, it might look more like this:
+````sh
+dcy:x	%%%AQBjb20udHdpdHRlci5hbGdlYmlyZC5EZWNheWVkVmFsdeUBQMVkIdW357VAWQAAAAAAAA==	8.752114744797748
+````
+
+Algescrubber will ignore the human readable values if it's given its own output to consume, because it only looks at the first two columns of input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
 ###Flushing:
 
@@ -283,5 +287,4 @@ fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
 
 ###Other TODO
 
-* Configurable incremental flushing for realtime querying
 * Flushing to key/value store (redis, mongo, mysql?)
