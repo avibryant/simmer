@@ -1,4 +1,4 @@
-package com.stripe.algescrubber
+package com.stripe.simmer
 import java.util.concurrent._
 import scala.concurrent.ops._
 

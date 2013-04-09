@@ -1,4 +1,0 @@
-#!/usr/bin/env ruby
-
-ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
-exec("java -Xmx2G -jar #{ROOT}/target/algescrubber-0.0.1-jar-with-dependencies.jar " + ARGV.join(" "))

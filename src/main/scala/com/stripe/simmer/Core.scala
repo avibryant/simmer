@@ -1,4 +1,4 @@
-package com.stripe.algescrubber
+package com.stripe.simmer
 
 import java.util.{Map => JMap, LinkedHashMap => JLinkedHashMap}
 import scala.collection.JavaConverters._
@@ -16,7 +16,7 @@ trait Output {
     def write[A](key : String, value : A, aggregator : Aggregator[A])
 }
 
-class Scrubber(output : Output, capacity : Int, flushEvery : Int) {
+class Simmer(output : Output, capacity : Int, flushEvery : Int) {
     
     val accumulators = new JLinkedHashMap[String,Accumulator[_]](capacity, 0.75f, true) {
         override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {

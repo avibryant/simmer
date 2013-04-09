@@ -1,4 +1,4 @@
-package com.stripe.algescrubber
+package com.stripe.simmer
 
 object Main {
 	def main(args : Array[String]) {
@@ -8,7 +8,7 @@ object Main {
 		val capacity = if(args.size > 0) args(0).toInt else 5000
 		val flushEvery = if(args.size > 1) args(1).toInt else 0
 
-		val scrubber = new Scrubber(StdOutput, capacity, flushEvery)
+		val scrubber = new Simmer(StdOutput, capacity, flushEvery)
 
     	for(line <- io.Source.stdin.getLines) {
     		val columns = line.split("\t")

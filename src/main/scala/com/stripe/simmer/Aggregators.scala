@@ -1,4 +1,4 @@
-package com.stripe.algescrubber
+package com.stripe.simmer
 
 import com.twitter.algebird._
 import com.twitter.bijection._

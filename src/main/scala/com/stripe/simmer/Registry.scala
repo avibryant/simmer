@@ -1,4 +1,4 @@
-package com.stripe.algescrubber
+package com.stripe.simmer
 
 object Registry {	
 	var registry = Map[String,(Option[Int],Option[Aggregator[_]])=>Aggregator[_]]()

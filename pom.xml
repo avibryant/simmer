@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.stripe</groupId>
-  <artifactId>algescrubber</artifactId>
+  <artifactId>simmer</artifactId>
   <version>0.0.1</version>
   <packaging>jar</packaging>
 
-  <name>algescrubber</name>
+  <name>simmer</name>
   <url>http://maven.apache.org</url>
   
   <build>
@@ -42,7 +42,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <configuration>
-                    <mainClass>com.stripe.algescrubber.Main</mainClass>
+                    <mainClass>com.stripe.simmer.Main</mainClass>
                     <arguments>
                         <argument>1000</argument>
                     </arguments>
@@ -58,7 +58,7 @@
                 </descriptorRefs>
                  <archive>
             <manifest>
-                    <mainClass>com.stripe.algescrubber.Main</mainClass>
+                    <mainClass>com.stripe.simmer.Main</mainClass>
             </manifest>
           </archive>
               </configuration>

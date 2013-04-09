@@ -1,26 +1,29 @@
-#Algescrubber
+#simmer
 Avi Bryant
 
-Algescrubber is a streaming aggregation tool. It can be used as a filter in a unix pipeline, and with Hadoop or similar systems, to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the aggregations it supports include:
+Simmer is a streaming aggregation tool. It can be used as a filter in a unix pipeline, and with Hadoop or similar systems, to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the aggregations it supports include:
 * counts of unique values
 * exponentially decaying values
 * top k most frequent values
 * percentiles
 * min-hash signatures
 
-It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), but uses the probabalistic aggregation algorithms from Twitter's [Algebird](http://github.com/twitter/algebird). It's not to be confused with an [algae scrubber](http://i611.photobucket.com/albums/tt191/FloydRTurbo/2011%20Aquarium%20Pics/Miscellaneous/ATS%20Designs/AS_teboLED-2.jpg), which is an entirely different kind of filter.
+Simmer is commutative and associative, which is to say that you can always use simmer to combine simmer's output.
+This also means it can be used as a combiner in a map-reduce framework like Hadoop.
+
+It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), but uses the probabalistic aggregation algorithms from Twitter's [Algebird](http://github.com/twitter/algebird).
 
 ###To build:
 
-The first time, you need to install a development build from my fork of algebird:
+The first time, you need to install a development build from my algebird repository:
 
 ````sh
 git clone git://github.com/avibryant/algebird.git
 cd algebird
 sbt publish-local
 cd ..
-git clone git://github.com/avibryant/algescrubber.git
-cd algescrubber
+git clone git://github.com/avibryant/simmer.git
+cd simmer
 bin/install-algebird-snapshot.rb
 ````
 
@@ -32,12 +35,12 @@ mvn package
 
 ###To run:
 ````sh
-bin/scrub < /path/to/data.tsv
+bin/simmer < /path/to/data.tsv
 ````
 
 ###Input format:
 
-The scrub command takes tab-delimited key-value input and combines all of the values for each key. Here's a very simple sample input:
+The simmer command takes tab-delimited key-value input and combines all of the values for each key. Here's a very simple sample input:
 
 ````
 sum:x	1
@@ -54,7 +57,7 @@ sum:x	2
 min:y	3
 ````
 
-scrub has taken the two values for the key "sum:x", 1 and 2, and produced their sum, 3; it has also taken the three values for the key "min:y", 3, 4 and 3, and produced their minimum, 3.
+simmer has taken the two values for the key "sum:x", 1 and 2, and produced their sum, 3; it has also taken the three values for the key "min:y", 3, 4 and 3, and produced their minimum, 3.
 
 The prefix of each key, before the colon, determines how its values will be combined; in this case, the values for "sum:x" are summed, and the values for "min:y" are combined by taking the minimum. As in this example, you can freely mix different types of aggregation in the same input stream.
 
@@ -64,7 +67,7 @@ Many of the aggregations can be parameterized by including an integer in the pre
 
 ###Output format
 
-The output is, like the input format, a tab-separated key-value stream. The output is designed to be easy to read by humans, while at the same time allowing multiple outputs to be combined and fed back into scrub for further aggregation. As a simple example of how these are in conflict, consider an aggregation producing the average of all of the values for a key. The human-readable output is just a single number, the average. To properly combine multiple averages, however, you have to know the count of how many values originally went into each one, so that you can weight them properly. Algescrubber solves this by producing two values for each key, one with a possibly opaque, machine-readable value that is suitable for further aggregation, and another that includes a human-readable version of the value. Often, it's convenient to filter scrub's output through "cut -f 1,3" to see only the human-readable versions.
+The output is, like the input format, a tab-separated key-value stream. The output is designed to be easy to read by humans, while at the same time allowing multiple outputs to be combined and fed back into simmer for further aggregation. As a simple example of how these are in conflict, consider an aggregation producing the average of all of the values for a key. The human-readable output is just a single number, the average. To properly combine multiple averages, however, you have to know the count of how many values originally went into each one, so that you can weight them properly. simmer solves this by producing two values for each key, one with a possibly opaque, machine-readable value that is suitable for further aggregation, and another that includes a human-readable version of the value. Often, it's convenient to filter simmer's output through "cut -f 1,3" to see only the human-readable versions.
 
 For simple cases like sum, the human-readable and machine-readable formats are identical, so the output looks like this:
 
@@ -77,18 +80,18 @@ For other aggregations, it might look more like this:
 dcy:x	%%%AQBjb20udHdpdHRlci5hbGdlYmlyZC5EZWNheWVkVmFsdeUBQMVkIdW357VAWQAAAAAAAA==	8.752114744797748
 ````
 
-Algescrubber will ignore the human readable values if it's given its own output to consume, because it only looks at the first two columns of input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
+Simmer will ignore the human readable values if it's given its own output to consume, because it only looks at the first two columns of input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
 ###Flushing:
 
-The scrub command takes two optional integer arguments. The first argument is capacity: how many keys it should hold in memory at once. Whenever a new keys is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through scrub) to get the complete result.
+The simmer command takes two optional integer arguments. The first argument is capacity: how many keys it should hold in memory at once. Whenever a new keys is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
 
 The second argument controls the maximum number of values to aggregate for any one key before flushing. If this is set to 0, there is no maximum and frequently seen keys will only be output when there is no more input. However, if you have an infinite stream of input, you will want to set this to some non-zero value to get intermediate results out. Again, this means there may be multiple values for a single key that need to be combined after the fact.
 
 The defaults are equivalent to:
 
 ````
-bin/scrub 5000 0
+bin/simmer 5000 0
 ````
 
 
