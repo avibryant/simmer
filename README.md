@@ -38,7 +38,7 @@ mvn package
 bin/simmer < /path/to/data.tsv
 ````
 
-###Input format:
+###Input format
 
 The simmer command takes tab-delimited key-value input and combines all of the values for each key. Here's a very simple sample input:
 
@@ -82,9 +82,9 @@ dcy:x	%%%AQBjb20udHdpdHRlci5hbGdlYmlyZC5EZWNheWVkVmFsdeUBQMVkIdW357VAWQAAAAAAAA=
 
 Simmer will ignore the human readable values if it's given its own output to consume, because it only looks at the first two columns of input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
-###Flushing:
+###Flushing
 
-The simmer command takes two optional integer arguments. The first argument is capacity: how many keys it should hold in memory at once. Whenever a new keys is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
+The simmer command takes two optional integer arguments. The first argument is capacity: how many keys it should hold in memory at once. Whenever a new key is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
 
 The second argument controls the maximum number of values to aggregate for any one key before flushing. If this is set to 0, there is no maximum and frequently seen keys will only be output when there is no more input. However, if you have an infinite stream of input, you will want to set this to some non-zero value to get intermediate results out. Again, this means there may be multiple values for a single key that need to be combined after the fact.
 
@@ -305,3 +305,4 @@ fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
 ###Other TODO
 
 * Flushing to key/value store (redis, mongo, mysql?)
+* Hadoop Reducer subclass
