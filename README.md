@@ -222,10 +222,18 @@ These are more specialized than, or build in some way on, the numeric aggregatio
 <td>Top K<br>(by any numeric aggregation)</td>
 <td>how many top values to retain <br> also requires a secondary prefix (see example)</td>
 <td>top10</td>
-<td>...<pre>
+<td>For example, this will find the top 3 items by the sum of their values, assuming an item:value format<pre>
+top3:sum:x	a:1
+top3:sum:x	b:2
+top3:sum:x	a:2
+top3:sum:x	c:1
+top3:sum:x	d:3
 </pre>
+
+However, top10:uv:x, or top5:pct95:x, and so on, would also be valid keys.
 </td>
 <td><pre>
+top3:sum:x	a:3,d:3,b:2
 </pre>
 </td>
 </tr>
@@ -236,9 +244,15 @@ These are more specialized than, or build in some way on, the numeric aggregatio
 <td>works just like top</td>
 <td>bot10</td>
 <td><pre>
+bot3:sum:x	a:1
+bot3:sum:x	b:2
+bot3:sum:x	a:2
+bot3:sum:x	c:1
+bot3:sum:x	d:3
 </pre>
 </td>
 <td><pre>
+bot3:sum:x	c:1,b:2,d:3
 </pre>
 </td>
 </tr>
