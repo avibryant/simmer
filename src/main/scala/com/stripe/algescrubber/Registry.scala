@@ -1,14 +1,5 @@
 package com.stripe.algescrubber
 
-trait Aggregator[A] {
-	def createAccumulator(input : String) = new Accumulator(this, prepare(input))
-	def reduce(left : A, right : A) : A
-	def prepare(input : String) : A
-	def serialize(value : A) : String
-	def deserialize(serialized : String) : Option[A]
-	def present(value : A) : String
-}
-
 object Registry {	
 	var registry = Map[String,(Option[Int],Option[Aggregator[_]])=>Aggregator[_]]()
 	var cache = Map[String,Aggregator[_]]()

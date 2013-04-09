@@ -15,6 +15,8 @@ object AlgebirdAggregators extends Registrar {
 	register("pct", 50){new Percentile(_)}
 	register("fh", 10){new HashingTrick(_)}
 	register("dcy", 86400){new Decay(_)}
+	registerRecursive("top", 10){(k,inner) => new HeavyHitters(k,inner)}
+	registerRecursive("bot", 10){(k,inner) => new HeavyHitters(k,inner,-1.0)}
 }
 
 trait MonoidAggregator[A] extends Aggregator[A] {
@@ -151,10 +153,14 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 	} 
 }
 
-class HeavyHitters[A](k : Int, inner : NumericAggregator[A]) extends KryoAggregator[SketchMap[String, A]] {
+class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) extends KryoAggregator[SketchMap[String, A]] {
+	val innerNumeric = inner match {
+		case in : NumericAggregator[A] => in
+		case _ => error("top and bot require a numeric aggregation")
+	}
 	implicit val str2Bytes = (x : String) => x.getBytes
-	implicit val innerMonoid = inner.monoid
-	implicit val ordering = Ordering.by{a : A => inner.presentNumeric(a)}
+	implicit val innerMonoid = innerNumeric.monoid
+	implicit val ordering = Ordering.by{a : A => innerNumeric.presentNumeric(a) * order}
 	val monoid = new SketchMapMonoid[String,A](100,5,123456,k)
 
 	def prepare(in : String) = {

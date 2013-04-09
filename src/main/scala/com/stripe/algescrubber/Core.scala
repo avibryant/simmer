@@ -3,6 +3,15 @@ package com.stripe.algescrubber
 import java.util.{Map => JMap, LinkedHashMap => JLinkedHashMap}
 import scala.collection.JavaConverters._
 
+trait Aggregator[A] {
+    def createAccumulator(input : String) = new Accumulator(this, prepare(input))
+    def reduce(left : A, right : A) : A
+    def prepare(input : String) : A
+    def serialize(value : A) : String
+    def deserialize(serialized : String) : Option[A]
+    def present(value : A) : String
+}
+
 trait Output {
     def write[A](key : String, value : A, aggregator : Aggregator[A])
 }
