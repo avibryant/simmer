@@ -75,10 +75,11 @@ object DoubleMin extends DoubleAggregator {
 	}
 }
 
-class HyperLogLog(size : Int) extends KryoAggregator[HLL] {
+class HyperLogLog(size : Int) extends KryoAggregator[HLL] with NumericAggregator[HLL] {
   val monoid = new HyperLogLogMonoid(size)
   def prepare(in : String) = monoid.create(in.getBytes)
   def present(out : HLL) = out.estimatedSize.toInt.toString
+  def presentNumeric(out : HLL) = out.estimatedSize
 }
 
 class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
@@ -102,16 +103,19 @@ class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 	}
 }
 
-class Percentile(pct : Int) extends KryoAggregator[Map[Int,Int]] {
+class Percentile(pct : Int) extends KryoAggregator[Map[Int,Int]] with NumericAggregator[Map[Int,Int]]{
 	val monoid = implicitly[Monoid[Map[Int,Int]]]
 	def prepare(in : String) = Map(in.toInt -> 1)
-	def present(out : Map[Int,Int]) = {
+	def percentile(out : Map[Int,Int]) = {
 		val sum = out.values.sum
 		val target = sum.toDouble * pct / 100
 		val sortedKeys = out.keys.toList.sorted
 		val cumulative = sortedKeys.scanLeft(0){(acc,k) => acc+out(k)}
-		sortedKeys.zip(cumulative.tail).find{_._2 >= target}.map{_._1}.getOrElse(0).toString
+		sortedKeys.zip(cumulative.tail).find{_._2 >= target}.map{_._1}.getOrElse(0)
 	}
+
+	def present(out : Map[Int,Int]) = percentile(out).toString
+	def presentNumeric(out : Map[Int,Int]) = percentile(out).toDouble
 }
 
 class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
@@ -130,7 +134,7 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	}
 }
 
-class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
+class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAggregator[DecayedValue] {
 	val monoid = DecayedValue.monoidWithEpsilon(0.000001)
 	def prepare(in : String) = {
 		val (timestamp, value) = split(in, ":").get
@@ -147,10 +151,12 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 		calendar.getTimeInMillis / 1000
 	}
 
-	def present(out : DecayedValue) = {
+	def presentNumeric(out : DecayedValue) = {
 		val adjusted = monoid.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
-		adjusted.value.toString
+		adjusted.value
 	} 
+
+	def present(out : DecayedValue) = presentNumeric(out).toString
 }
 
 class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) extends KryoAggregator[SketchMap[String, A]] {

@@ -8,14 +8,15 @@ object Registry {
 		registry += typeKey -> fn
 	}
 
+	//this is a bit of a mess
 	def get(key: String) : Option[Aggregator[_]] = {
 		val keyRegex = """([a-zA-Z]+)(\d*)(:[a-zA-Z0-9:]+)?:[a-zA-Z0-9]+""".r
 
 		keyRegex.findFirstMatchIn(key).flatMap{m =>
 			val typeKey = m.group(1)
 			val optionalInt = m.group(2)
-			val optionalRecursion = m.group(3)
-			val fullTypeKey = typeKey + optionalInt + (if(optionalRecursion == null) "" else optionalRecursion)
+			val optionalRecursion = if(m.group(3) == null) "" else m.group(3).tail
+			val fullTypeKey = typeKey + optionalInt + optionalRecursion
 
 			cache.get(fullTypeKey).orElse{
 				val created = createAggregator(typeKey, optionalInt, optionalRecursion)
@@ -28,7 +29,7 @@ object Registry {
 
 	def createAggregator(typeKey : String, optionalInt : String, optionalRecursion : String) = {
 		val int = if(optionalInt.isEmpty) None else Some(optionalInt.toInt)
-		val inner = if(optionalRecursion == null) None else get(optionalRecursion)
+		val inner = if(optionalRecursion.isEmpty) None else get(optionalRecursion + ":dummy")
 
 		registry.get(typeKey).map {fn => fn(int, inner)}
 	}
