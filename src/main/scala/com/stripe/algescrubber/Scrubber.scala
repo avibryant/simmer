@@ -1,43 +1,59 @@
 package com.stripe.algescrubber
 
-import java.util.HashMap
+import java.util.{Map => JMap, LinkedHashMap => JLinkedHashMap}
 import scala.collection.JavaConverters._
 
 trait Output {
-    def write[A](valueKey : String, value : A, aggKey : String, aggregator : Aggregator[A])
+    def write[A](key : String, value : A, aggregator : Aggregator[A])
 }
 
-class Scrubber {
-    val tables = scala.collection.mutable.Map[String,Table[_]]()
-
-    def get(aggKey : String) = {
-        Registry.get(aggKey).map{agg => tables.getOrElseUpdate(aggKey, agg.createTable)}
-    }
-
-    def update(aggKey : String, valueKey : String, value : String) {
-        get(aggKey) match {
-            case Some(table) => table.update(valueKey, value)
-            case None => error("Could not find aggregator of type " + aggKey)
+class Scrubber(output : Output, capacity : Int, flushEvery : Int) {
+    
+    val accumulators = new JLinkedHashMap[String,Accumulator[_]](capacity, 0.75f, true) {
+        override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {
+            if(this.size > capacity) {
+                eldest.getValue.write(eldest.getKey, output)
+                true
+            } else {
+                false
+            }
         }
     }
 
-    def flush(output : Output) {
-        tables.foreach{case (key,table) => table.flush(key, output)}
+    def update(key : String, value : String) {
+        val acc = accumulators.get(key)
+        if(acc == null) {
+            Registry.get(key) match {
+                case Some(agg) => {
+                    val newAcc = agg.createAccumulator(value)
+                    accumulators.put(key, newAcc)
+                }
+                case None => error("Could not find aggregator for key " + key)
+            }
+        } else {
+            acc.update(value)
+            if(flushEvery > 0 && acc.count >= flushEvery) {
+                acc.write(key, output)
+                accumulators.remove(key)
+            }
+        }
+    }
+
+    def flush {
+        accumulators.asScala.foreach{case (key,acc) => acc.write(key, output)}
     }
 }
 
-class Table[A](aggregator : Aggregator[A]) {
-    var accumulators = new HashMap[String,A]()
+class Accumulator[A](aggregator : Aggregator[A], var value : A) {
+    var count = 1
 
-    def update(key : String, value : String) {
-        val right = aggregator.deserialize(value).getOrElse(aggregator.prepare(value))
-        if(accumulators.containsKey(key))
-            accumulators.put(key, aggregator.reduce(accumulators.get(key), right))
-        else
-            accumulators.put(key, right)
+    def update(input : String) {
+        val newValue = aggregator.deserialize(input).getOrElse(aggregator.prepare(input))
+        value = aggregator.reduce(value, newValue)
+        count += 1
     }
 
-    def flush(aggKey : String, output : Output) {
-        accumulators.asScala.foreach { case (key,value) => output.write(key, value, aggKey, aggregator)}
+    def write(key : String, output : Output) {
+        output.write(key, value, aggregator)
     }
 }

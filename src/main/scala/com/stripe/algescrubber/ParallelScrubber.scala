@@ -2,18 +2,13 @@ package com.stripe.algescrubber
 import java.util.concurrent._
 import scala.concurrent.ops._
 
+//disabling for now
+/*
 class ParallelScrubber(nShards : Int = 16) {
 	val shards = (1 to nShards).map{i => new Shard}
-	var count = 0
 	val rand = new scala.util.Random
 
 	def update(aggKey : String, valueKey : String, value : String) {
-		count += 1
-//		if(count % 10000 == 0)
-//			System.err.println(count + " items")
-
-    	System.err.println("updating " + valueKey)
-
 		val mainShardIndex = (valueKey.hashCode % nShards + nShards) % nShards
 		if(!shards(mainShardIndex).queue.offer((aggKey, valueKey, value)))
 			shards(rand.nextInt(nShards)).queue.put((aggKey, valueKey, value))
@@ -57,3 +52,4 @@ class MergeOutput extends Output {
     	scrubber.flush(output)
     }
 }
+*/

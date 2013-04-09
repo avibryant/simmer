@@ -91,7 +91,7 @@ class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
 class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 	val monoid = new TopKMonoid[(Double,String)](k)
 	def prepare(in : String) = {
-		val (score, item) = Main.split(in, ":").get
+		val (score, item) = split(in, ":").get
 		monoid.build((score.toDouble * -1, item))
 	}
 
@@ -116,7 +116,7 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 	val monoid = new HashingTrickMonoid[Double](bits)
 	def prepare(in : String) = {
 		if(in.contains(":")) {
-			val (key, value) = Main.split(in, ":").get
+			val (key, value) = split(in, ":").get
 			monoid.init(key.getBytes, value.toDouble)
 		} else {
 			monoid.init(in.getBytes, 1.0)
@@ -131,7 +131,7 @@ class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
 class Decay(halflife : Int) extends KryoAggregator[DecayedValue] {
 	val monoid = DecayedValue.monoidWithEpsilon(0.000001)
 	def prepare(in : String) = {
-		val (timestamp, value) = Main.split(in, ":").get
+		val (timestamp, value) = split(in, ":").get
 		DecayedValue.build(value.toDouble, timestamp.toDouble, halflife.toDouble)
 	}
 
@@ -158,7 +158,7 @@ class HeavyHitters[A](k : Int, inner : NumericAggregator[A]) extends KryoAggrega
 	val monoid = new SketchMapMonoid[String,A](100,5,123456,k)
 
 	def prepare(in : String) = {
-		val (key, value) = Main.split(in, ":").get
+		val (key, value) = split(in, ":").get
 		monoid.create(key, inner.prepare(value))
 	}
 

@@ -5,33 +5,25 @@ object Main {
 
 		AlgebirdAggregators.load
 
-		val scrubber = new Scrubber
+		val capacity = if(args.size > 0) args(0).toInt else 5000
+		val flushEvery = if(args.size > 1) args(1).toInt else 0
+
+		val scrubber = new Scrubber(StdOutput, capacity, flushEvery)
 
     	for(line <- io.Source.stdin.getLines) {
-    		for((fullKey, value) <- split(line, "\t")) {
-	    		for((aggKey, valueKey) <- split(fullKey, ":")) {
-	    			scrubber.update(aggKey, valueKey, value)
-		    	}
+    		for((key, value) <- split(line, "\t")) {
+	    		scrubber.update(key, value)
 		    }
 	   	}
 
-	   	scrubber.flush(StdOutput)
+	   	scrubber.flush
 	   	System.exit(0)
-	}
-
-	def split(str : String, delim : String) = {
-        val parts = str.split(delim)
-        val head = parts.head
-        if(parts.size > 1 && head.size > 0)
-            Some((head, str.drop(head.size + 1)))
-        else
-            None
 	}
 }
 
 object StdOutput extends Output {
-	def write[A](valueKey : String, value : A, aggKey : String, aggregator : Aggregator[A]) {
-		println(aggKey + ":" + valueKey + "\t" + aggregator.serialize(value))
-		println(":" + aggKey + ":" + valueKey + "\t" + aggregator.present(value))
+	def write[A](key : String, value : A, aggregator : Aggregator[A]) {
+		println(key + "\t" + aggregator.serialize(value))
+		println("#" + key + "\t" + aggregator.present(value))
 	}
 }
