@@ -9,7 +9,7 @@
 
   <name>simmer</name>
   <url>http://maven.apache.org</url>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -96,7 +96,7 @@
        <dependency>
           <groupId>com.twitter</groupId>
           <artifactId>algebird-core_2.9.2</artifactId>
-          <version>0.1.12-SNAPSHOT</version>
+          <version>0.1.12</version>
       </dependency>
        <dependency>
           <groupId>com.twitter</groupId>

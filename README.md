@@ -15,20 +15,6 @@ It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.
 
 ###To build:
 
-The first time, you need to install a development build from my algebird repository:
-
-````sh
-git clone git://github.com/avibryant/algebird.git
-cd algebird
-sbt publish-local
-cd ..
-git clone git://github.com/avibryant/simmer.git
-cd simmer
-bin/install-algebird-snapshot.rb
-````
-
-From then on:
-
 ````sh
 mvn package
 ````
