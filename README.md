@@ -21,7 +21,7 @@ mvn package
 
 ###To run:
 ````sh
-bin/simmer < /path/to/data.tsv
+target/simmer < /path/to/data.tsv
 ````
 
 ###Input format
