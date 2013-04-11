@@ -22,7 +22,7 @@ object AlgebirdAggregators extends Registrar {
 trait MonoidAggregator[A] extends Aggregator[A] {
 	def monoid : Monoid[A]
 	def reduce(left : A, right : A) = monoid.plus(left, right)
-}	
+}
 
 trait NumericAggregator[A] extends MonoidAggregator[A] {
 	def presentNumeric(value : A) : Double
@@ -43,7 +43,7 @@ trait AlgebirdAggregator[A] extends MonoidAggregator[A] {
 }
 
 trait KryoAggregator[A] extends AlgebirdAggregator[A] {
-  val injection : Injection[A,String] = 
+  val injection : Injection[A,String] =
   	KryoInjection.asInstanceOf[Injection[A, Array[Byte]]] andThen
   	Bijection.bytes2Base64 andThen
   	Base64String.unwrap
@@ -154,7 +154,7 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAgg
 	def presentNumeric(out : DecayedValue) = {
 		val adjusted = monoid.plus(out, DecayedValue.build(0.0, timestampAsOfEndOfDay, halflife.toDouble))
 		adjusted.value
-	} 
+	}
 
 	def present(out : DecayedValue) = presentNumeric(out).toString
 }

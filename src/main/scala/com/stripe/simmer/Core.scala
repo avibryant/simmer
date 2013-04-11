@@ -4,7 +4,8 @@ import java.util.{Map => JMap, LinkedHashMap => JLinkedHashMap}
 import scala.collection.JavaConverters._
 
 trait Aggregator[A] {
-    def createAccumulator(input : String) = new Accumulator(this, prepare(input))
+    def createAccumulator(input : String) = new Accumulator(this, parse(input))
+    def parse(input : String) : A = deserialize(input).getOrElse(prepare(input))
     def reduce(left : A, right : A) : A
     def prepare(input : String) : A
     def serialize(value : A) : String
@@ -17,7 +18,7 @@ trait Output {
 }
 
 class Simmer(output : Output, capacity : Int, flushEvery : Int) {
-    
+
     val accumulators = new JLinkedHashMap[String,Accumulator[_]](capacity, 0.75f, true) {
         override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {
             if(this.size > capacity) {
@@ -58,7 +59,7 @@ class Accumulator[A](aggregator : Aggregator[A], var value : A) {
     var count = 1
 
     def update(input : String) {
-        val newValue = aggregator.deserialize(input).getOrElse(aggregator.prepare(input))
+        val newValue = aggregator.parse(input)
         value = aggregator.reduce(value, newValue)
         count += 1
     }
