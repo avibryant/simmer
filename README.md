@@ -281,14 +281,6 @@ fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
 
 </table>
 
-###Aggregations TODO
+###TODO
 
-* Exponential moving average (this is just decaying sum / decaying count, but worth having)
-* Statistical moments - mean, variance, skew, kurtosis. As a single aggregation or as 4?
-* F2 (measure of key frequency skew... too specialized?)
-* Remove the quantization requirement for percentiles (?)
-
-###Other TODO
-
-* Flushing to key/value store (redis, mongo, mysql?)
-* Hadoop Reducer subclass
+See https://github.com/avibryant/simmer/issues
