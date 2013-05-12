@@ -73,7 +73,7 @@
         </executions>
             </plugin>
 
-            
+
         <plugin>
           <groupId>org.skife.maven</groupId>
           <artifactId>really-executable-jar-maven-plugin</artifactId>
@@ -82,12 +82,12 @@
             <!-- value of flags will be interpolated into the java invocation -->
             <!-- as "java $flags -jar ..." -->
             <flags>-Xmx2G</flags>
-            
+
             <!-- (optional) name for binary executable, if not set will just -->
             <!-- make the regular jar artifact executable -->
             <programFile>simmer</programFile>
           </configuration>
-          
+
           <executions>
             <execution>
               <phase>package</phase>
@@ -128,5 +128,21 @@
           <artifactId>chill_2.9.2</artifactId>
           <version>0.2.0</version>
       </dependency>
+       <dependency>
+          <groupId>org.rogach</groupId>
+          <artifactId>scallop_2.9.2</artifactId>
+          <version>0.9.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>finagle-redis_2.9.2</artifactId>
+        <version>6.3.0</version>
+      </dependency>
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>finagle-http_2.9.2</artifactId>
+      <version>6.3.0</version>
+    </dependency>
+
   </dependencies>
 </project>

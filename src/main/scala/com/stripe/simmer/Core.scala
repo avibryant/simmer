@@ -17,7 +17,11 @@ trait Output {
     def write[A](key : String, value : A, aggregator : Aggregator[A])
 }
 
-class Simmer(output : Output, capacity : Int, flushEvery : Int) {
+trait Input {
+    def run(simmer : Simmer)
+}
+
+class Simmer(output : Output, capacity : Int, flushEvery : Option[Int]) {
 
     val accumulators = new JLinkedHashMap[String,Accumulator[_]](capacity, 0.75f, true) {
         override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {
@@ -42,7 +46,7 @@ class Simmer(output : Output, capacity : Int, flushEvery : Int) {
             }
         } else {
             acc.update(value)
-            if(flushEvery > 0 && acc.count >= flushEvery) {
+            if(flushEvery.isDefined && acc.count >= flushEvery.get) {
                 acc.write(key, output)
                 accumulators.remove(key)
             }
