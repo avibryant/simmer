@@ -1,15 +1,14 @@
 package com.stripe.simmer
 
-import com.twitter.finagle.redis.TransactionalClient
+import com.twitter.finagle.redis.{TransactionalClient, ClientError}
 import com.twitter.finagle.redis.util._
 import com.twitter.finagle.redis.protocol.{Set => SetCommand}
 
 class Redis(host : String) extends Output {
   System.err.println("Connecting to redis at " + host)
   val client = TransactionalClient(host)
-  System.err.println(CBToString(client.info()().get))
 
-  def write[A](key : String, value : A, aggregator : Aggregator[A]) {
+  def write[A](key : String, value : A, aggregator : Aggregator[A]) : Boolean = {
     val keyCB = StringToChannelBuffer(key)
 
     val future = client.watch(List(keyCB)).flatMap { unit =>
@@ -31,6 +30,14 @@ class Redis(host : String) extends Output {
       }
     }
 
-    System.err.println(future.get)
+    try {
+      future.get
+      true
+    } catch {
+      case ex : ClientError => {
+        System.err.println(ex)
+        false
+      }
+    }
   }
 }

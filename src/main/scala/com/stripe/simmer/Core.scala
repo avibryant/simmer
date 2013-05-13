@@ -14,7 +14,7 @@ trait Aggregator[A] {
 }
 
 trait Output {
-    def write[A](key : String, value : A, aggregator : Aggregator[A])
+    def write[A](key : String, value : A, aggregator : Aggregator[A]) : Boolean
 }
 
 trait Input {
@@ -27,7 +27,6 @@ class Simmer(output : Output, capacity : Int, flushEvery : Option[Int]) {
         override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {
             if(this.size > capacity) {
                 eldest.getValue.write(eldest.getKey, output)
-                true
             } else {
                 false
             }
@@ -47,13 +46,15 @@ class Simmer(output : Output, capacity : Int, flushEvery : Option[Int]) {
         } else {
             acc.update(value)
             if(flushEvery.isDefined && acc.count >= flushEvery.get) {
-                acc.write(key, output)
-                accumulators.remove(key)
+                if(acc.write(key, output)) {
+                    accumulators.remove(key)
+                }
             }
         }
     }
 
     def flush {
+        //TODO respect the return value from write()
         accumulators.asScala.foreach{case (key,acc) => acc.write(key, output)}
         accumulators.clear
     }
@@ -68,7 +69,7 @@ class Accumulator[A](aggregator : Aggregator[A], var value : A) {
         count += 1
     }
 
-    def write(key : String, output : Output) {
+    def write(key : String, output : Output) = {
         output.write(key, value, aggregator)
     }
 }

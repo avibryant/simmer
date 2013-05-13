@@ -45,7 +45,8 @@ object StdInput extends Input {
 }
 
 object StdOutput extends Output {
-	def write[A](key : String, value : A, aggregator : Aggregator[A]) {
+	def write[A](key : String, value : A, aggregator : Aggregator[A]) = {
 		println(key + "\t" + aggregator.serialize(value) + "\t" + aggregator.present(value))
+		true
 	}
 }

@@ -1,7 +1,12 @@
 #simmer
 Avi Bryant
 
-Simmer is a streaming aggregation tool. It can be used as a filter in a unix pipeline, and with Hadoop or similar systems, to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the aggregations it supports include:
+Simmer is a streaming aggregation tool. It can be used in several contexts to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the ways it can be used include:
+* As a filter in a unix pipeline processing logs or other text files
+* As a combiner and reducer in Hadoop streaming jobs
+* As a statsd-style metrics service over UDP, optionally backed by Redis
+
+Some of the aggregations it supports include:
 * counts of unique values
 * exponentially decaying values
 * top k most frequent values
@@ -9,7 +14,6 @@ Simmer is a streaming aggregation tool. It can be used as a filter in a unix pip
 * min-hash signatures
 
 Simmer is commutative and associative, which is to say that you can always use simmer to combine simmer's output.
-This also means it can be used as a combiner in a map-reduce framework like Hadoop.
 
 It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), but uses the probabalistic aggregation algorithms from Twitter's [Algebird](http://github.com/twitter/algebird).
 
@@ -22,6 +26,11 @@ mvn package
 ###To run:
 ````sh
 target/simmer < /path/to/data.tsv
+````
+
+###To run listening on UDP and writing to Redis on every 10 updates to a key:
+````sh
+target/simmer -u 8000 -r localhost:6379 -f 10
 ````
 
 ###Input format
@@ -70,16 +79,23 @@ Simmer will ignore the human readable values if it's given its own output to con
 
 ###Flushing
 
-The simmer command takes two optional integer arguments. The first argument is capacity: how many keys it should hold in memory at once. Whenever a new key is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
+The simmer command takes two optional integer arguments. The first argument is --capacity, or -c: how many keys it should hold in memory at once. Whenever a new key is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
 
-The second argument controls the maximum number of values to aggregate for any one key before flushing. If this is set to 0, there is no maximum and frequently seen keys will only be output when there is no more input. However, if you have an infinite stream of input, you will want to set this to some non-zero value to get intermediate results out. Again, this means there may be multiple values for a single key that need to be combined after the fact.
+The second argument, --flush or -f, controls the maximum number of values to aggregate for any one key before flushing. If this is set to 0, there is no maximum and frequently seen keys will only be output when there is no more input. However, if you have an infinite stream of input, you will want to set this to some non-zero value to get intermediate results out. Again, this means there may be multiple values for a single key that need to be combined after the fact.
 
 The defaults are equivalent to:
 
 ````
-bin/simmer 5000 0
+bin/simmer -c 5000 -f 0
 ````
 
+###UDP
+
+If you start simmer with --udp or -u, followed by a port number, it will listen on that UDP port instead of on stdin for rows of data; one UDP packet per row.
+
+###Redis
+
+If you start simmer with --redis or -r, followed by host:port, it will write to Redis instead of stdout; the first column of output (the key) will be used as the Redis key, and the second two columns, tab-separated, will be used as a Redis string value. Any existing data stored in Redis at that key will be merged with the output data whenever simmer flushes.
 
 ###Numeric Aggregations
 
