@@ -9,7 +9,7 @@ class Redis(host : String) extends Output {
   val client = TransactionalClient(host)
 
   def write[A](key : String, value : A, aggregator : Aggregator[A]) : Boolean = {
-    val keyCB = StringToChannelBuffer(key)
+    val keyCB = StringToChannelBuffer(":" + key)
 
     val future = client.watch(List(keyCB)).flatMap { unit =>
       client.get(keyCB).flatMap { result =>
@@ -17,16 +17,18 @@ class Redis(host : String) extends Output {
           result match {
             case Some(cb) => {
               val str = CBToString(cb)
-              val columns = str.split("\t")
-              val oldValue = aggregator.deserialize(columns(0)).get
+              val oldValue = aggregator.deserialize(str).get
               aggregator.reduce(oldValue, value)
             }
             case None => value
           }
 
-        val newString = aggregator.serialize(newValue) + "\t" + aggregator.present(newValue)
-        System.err.println("Setting " + key + " to " + newString);
-        client.transaction(List(SetCommand(keyCB, StringToChannelBuffer(newString))))
+        val serialized = aggregator.serialize(newValue)
+        val presented = aggregator.present(newValue)
+        client.transaction(List(
+          SetCommand(keyCB, StringToChannelBuffer(serialized)),
+          SetCommand(StringToChannelBuffer(key), StringToChannelBuffer(presented))
+        ))
       }
     }
 

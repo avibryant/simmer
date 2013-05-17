@@ -12,6 +12,7 @@ object Main {
 			val flushEvery = opt[Int]("flush", 'f', "flush a key once it hits this many values")
 			val udp = opt[Int]("udp", 'u', "UDP port to listen for input")
 			val redis = opt[String]("redis", 'r', "connect to Redis at host:port")
+			val http = opt[Int]("http", 'h', "TCP port to listen for HTTP queries")
 		}
 
 		val input = Conf.udp.get match {
