@@ -177,14 +177,15 @@ hll:x 2
 <td>Percentile<br></td>
 <td>which percentile to output</td>
 <td>pct50 (ie median)</td>
-<td>For now, data should be quantized to a reasonable number of integer bins.
-<pre>pct50:x 2
+<td>
+<pre>pct50:x  2
+pct50:x 4
 pct50:x 4
 pct50:x 100
 </pre>
 </td>
-<td><pre>
-pct50:x 4
+<td>The output will be an upper bound on the estimated percentile, expressed as a double. <pre>
+pct50:x 4.0000152587890625
 </pre>
 </td>
 </tr>

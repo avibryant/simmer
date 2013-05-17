@@ -103,19 +103,14 @@ class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
 	}
 }
 
-class Percentile(pct : Int) extends KryoAggregator[Map[Int,Int]] with NumericAggregator[Map[Int,Int]]{
-	val monoid = implicitly[Monoid[Map[Int,Int]]]
-	def prepare(in : String) = Map(in.toInt -> 1)
-	def percentile(out : Map[Int,Int]) = {
-		val sum = out.values.sum
-		val target = sum.toDouble * pct / 100
-		val sortedKeys = out.keys.toList.sorted
-		val cumulative = sortedKeys.scanLeft(0){(acc,k) => acc+out(k)}
-		sortedKeys.zip(cumulative.tail).find{_._2 >= target}.map{_._1}.getOrElse(0)
+class Percentile(pct : Int) extends KryoAggregator[QTree[Double]] with NumericAggregator[QTree[Double]]{
+	val monoid = new QTreeSemigroup[Double](6) with Monoid[QTree[Double]] {
+		val zero = QTree(0.0) //not actually right but should never be used?
 	}
 
-	def present(out : Map[Int,Int]) = percentile(out).toString
-	def presentNumeric(out : Map[Int,Int]) = percentile(out).toDouble
+	def prepare(in : String) = QTree(in.toDouble)
+	def present(out : QTree[Double]) = presentNumeric(out).toString
+	def presentNumeric(out : QTree[Double]) = out.quantileBounds(pct.toDouble / 100)._2
 }
 
 class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
