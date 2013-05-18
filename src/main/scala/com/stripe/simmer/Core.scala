@@ -23,6 +23,8 @@ trait Input {
 
 class Simmer(output : Output, capacity : Int, flushEvery : Option[Int]) {
 
+    Runtime.getRuntime.addShutdownHook(new Thread { override def run { flush } })
+
     val accumulators = new JLinkedHashMap[String,Accumulator[_]](capacity, 0.75f, true) {
         override def removeEldestEntry(eldest : JMap.Entry[String, Accumulator[_]]) = {
             if(this.size > capacity) {
@@ -64,10 +66,20 @@ class Accumulator[A](aggregator : Aggregator[A], var value : A) {
     var count = 1
 
     def update(input : String) {
-        val newValue = aggregator.parse(input)
-        value = aggregator.reduce(value, newValue)
+        value = merge(input)
         count += 1
     }
+
+    def merge(input : String) = {
+        val newValue = aggregator.parse(input)
+        aggregator.reduce(value, newValue)
+    }
+
+    def mergeAndPresent(input : String) = {
+        aggregator.present(merge(input))
+    }
+
+    def present = aggregator.present(value)
 
     def write(key : String, output : Output) = {
         output.write(key, value, aggregator)

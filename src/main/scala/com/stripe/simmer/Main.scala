@@ -20,14 +20,14 @@ object Main {
 			case None => StdInput
 		}
 
-		val output = Conf.redis.get match {
-			case Some(host) => new Redis(host)
-			case None => StdOutput
-		}
+		val redis = Conf.redis.get.map{host => new Redis(host)}
+		val output = redis.getOrElse(StdOutput)
 
 		val simmer = new Simmer(output, Conf.capacity(), Conf.flushEvery.get)
 
-		Runtime.getRuntime.addShutdownHook(new Thread { override def run { simmer.flush } })
+		for(port <- Conf.http) {
+			new Http(port, simmer, redis)
+		}
 
 		input.run(simmer)
 	}
