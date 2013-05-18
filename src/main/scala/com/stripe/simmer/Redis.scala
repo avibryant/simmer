@@ -5,7 +5,7 @@ import com.twitter.finagle.redis.util._
 import com.twitter.finagle.redis.protocol.{Set => SetCommand}
 import com.twitter.util.Future
 
-class Redis(host : String) extends Output {
+class Redis(host : String) extends Output with Lookup {
   System.err.println("Connecting to redis at " + host)
   val client = TransactionalClient(host)
 

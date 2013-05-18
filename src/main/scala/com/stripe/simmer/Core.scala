@@ -13,14 +13,6 @@ trait Aggregator[A] {
     def present(value : A) : String
 }
 
-trait Output {
-    def write[A](key : String, value : A, aggregator : Aggregator[A]) : Boolean
-}
-
-trait Input {
-    def run(simmer : Simmer)
-}
-
 class Simmer(output : Output, capacity : Int, flushEvery : Option[Int]) {
 
     Runtime.getRuntime.addShutdownHook(new Thread { override def run { flush } })

@@ -11,7 +11,7 @@ import java.net.InetSocketAddress
 import com.twitter.finagle.builder.{Server, ServerBuilder}
 import com.twitter.finagle.http.{Http => HttpCodec}
 
-class Http(port : Int, simmer : Simmer, redis : Option[Redis]) {
+class Http(port : Int, simmer : Simmer, lookup : Lookup) {
   System.err.println("Listening on HTTP port " + port)
 
   ServerBuilder()
@@ -34,7 +34,7 @@ class Http(port : Int, simmer : Simmer, redis : Option[Redis]) {
   def handle(request : HttpRequest) = {
     val key = extractKey(request)
 
-    redis.get.read(key).map{result =>
+    lookup.read(key).map{result =>
 
       val response = new DefaultHttpResponse(HTTP_1_1, OK)
       val acc = simmer.accumulators.get(key)
