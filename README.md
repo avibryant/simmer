@@ -161,13 +161,13 @@ max:x 2
 <td>Unique values<br>(estimated using the HyperLogLog algorithm)</td>
 <td>number of hash bits - memory use is 2^n</td>
 <td>uv12</td>
-<td><pre>hll:x a
-hll:x b
-hll:x a
+<td><pre>uv:x a
+uv:x b
+uv:x a
 </pre>
 </td>
 <td><pre>
-hll:x 2
+uv:x 2
 </pre>
 </td>
 </tr>
