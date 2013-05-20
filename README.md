@@ -20,12 +20,12 @@ It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.
 ###To build:
 
 ````sh
-mvn package
+rake
 ````
 
 ###To run:
 ````sh
-target/simmer < /path/to/data.tsv
+bin/simmer < /path/to/data.tsv
 ````
 
 ###To run listening on UDP and writing to Redis on every 10 updates to a key:
