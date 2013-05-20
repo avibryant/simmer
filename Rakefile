@@ -9,7 +9,9 @@ def find_scalac
   scalac
 end
 
-file "default" => [".classpath"] do |t|
+file "default" => ["build"]
+
+file "build" => [".classpath"] do |t|
   Dir.mkdir("target") unless Dir.exists?("target")
   Dir.mkdir("target/classes") unless Dir.exists?("target/classes")
 
