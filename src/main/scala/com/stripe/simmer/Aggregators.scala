@@ -42,6 +42,14 @@ trait AlgebirdAggregator[A] extends MonoidAggregator[A] {
 	}
 }
 
+trait BufferableAggregator[A] extends AlgebirdAggregator[A] {
+	val injection : Injection[A,String] =
+		Bufferable.injectionOf(bufferable) andThen
+  	Bijection.bytes2Base64 andThen
+  	Base64String.unwrap
+  def bufferable : Bufferable[A]
+}
+
 trait KryoAggregator[A] extends AlgebirdAggregator[A] {
   val injection : Injection[A,String] =
   	KryoInjection.asInstanceOf[Injection[A, Array[Byte]]] andThen
@@ -75,32 +83,19 @@ object DoubleMin extends DoubleAggregator {
 	}
 }
 
-class HyperLogLog(size : Int) extends KryoAggregator[HLL] with NumericAggregator[HLL] {
+class HyperLogLog(size : Int) extends BufferableAggregator[HLL] with NumericAggregator[HLL] {
   val monoid = new HyperLogLogMonoid(size)
   def prepare(in : String) = monoid.create(in.getBytes)
   def present(out : HLL) = out.estimatedSize.toInt.toString
   def presentNumeric(out : HLL) = out.estimatedSize
-}
 
-class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
-	val monoid = new MinHasher16(0.1, hashes * 2)
-	val injection = Bijection.bytes2Base64 andThen Base64String.unwrap
-	def prepare(in : String) = monoid.init(in)
-	def present(out : Array[Byte]) = {
-		out.grouped(2).toList.map{h => h.map{"%02X".format(_)}.mkString}.mkString(":")
-	}
-}
-
-class Top(k : Int) extends KryoAggregator[TopK[(Double,String)]] {
-	val monoid = new TopKMonoid[(Double,String)](k)
-	def prepare(in : String) = {
-		val (score, item) = split(in, ":").get
-		monoid.build((score.toDouble * -1, item))
-	}
-
-	def present(out : TopK[(Double,String)]) = {
-		out.items.map{case (score,item) => (score * -1).toString + ":" + item}.mkString(",")
-	}
+  def bufferable = Bufferable.build[HLL] { (bb, hll) =>
+      Bufferable.reallocatingPut(bb) { Bufferable.put(_, HyperLogLog.toBytes(hll)) }
+    } { bb =>
+    	Bufferable.get[Array[Byte]](bb).map { tup =>
+    		(tup._1, HyperLogLog.fromBytes(tup._2))
+    	}
+    }
 }
 
 class Percentile(pct : Int) extends KryoAggregator[QTree[Double]] with NumericAggregator[QTree[Double]]{
@@ -111,22 +106,6 @@ class Percentile(pct : Int) extends KryoAggregator[QTree[Double]] with NumericAg
 	def prepare(in : String) = QTree(in.toDouble)
 	def present(out : QTree[Double]) = presentNumeric(out).toString
 	def presentNumeric(out : QTree[Double]) = out.quantileBounds(pct.toDouble / 100)._2
-}
-
-class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
-	val monoid = new HashingTrickMonoid[Double](bits)
-	def prepare(in : String) = {
-		if(in.contains(":")) {
-			val (key, value) = split(in, ":").get
-			monoid.init(key.getBytes, value.toDouble)
-		} else {
-			monoid.init(in.getBytes, 1.0)
-		}
-	}
-
-	def present(out : AdaptiveVector[Double]) = {
-		out.mkString(",")
-	}
 }
 
 class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAggregator[DecayedValue] {
@@ -154,7 +133,7 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAgg
 	def present(out : DecayedValue) = presentNumeric(out).toString
 }
 
-class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) extends KryoAggregator[SketchMap[String, A]] {
+class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) extends BufferableAggregator[SketchMap[String, A]] {
 	val innerNumeric = inner match {
 		case in : NumericAggregator[A] => in
 		case _ => error("top and bot require a numeric aggregation")
@@ -171,5 +150,58 @@ class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) exte
 
 	def present(out : SketchMap[String, A]) = {
 		out.heavyHitters.map{case (k,v) => k + ":" + inner.present(v)}.mkString(",")
+	}
+
+	def bufferable = Bufferable.build[SketchMap[String, A]] { (bb, sm) =>
+		var newBb = bb
+		val totalValueString = inner.serialize(sm.totalValue)
+		newBb = Bufferable.reallocatingPut(newBb) { Bufferable.put(_, totalValueString) }
+		newBb = Bufferable.reallocatingPut(newBb) { Bufferable.put(_, sm.heavyHitterKeys) }
+		for(row <- (0 to monoid.params.depth - 1);
+				col <- (0 to monoid.params.width - 1)) {
+			val value = sm.valuesTable.getValue(row, col)
+			val valueString = inner.serialize(value)
+			newBb = Bufferable.reallocatingPut(newBb) { Bufferable.put(_, valueString) }
+		}
+		newBb
+	} { bb =>
+			Bufferable.get[String](bb).flatMap { tup =>
+				Bufferable.get[List[String]](tup._1).map { tup2 =>
+					var newBb = tup2._1
+					var matrix = monoid.zero.valuesTable
+					for(row <- (0 to monoid.params.depth - 1);
+							col <- (0 to monoid.params.width - 1)) {
+						val (bb3, str) = Bufferable.get[String](newBb).get
+						newBb = bb3
+						matrix = matrix.updated((row,col), inner.deserialize(str).get)
+					}
+					(newBb, SketchMap(monoid.params, matrix, tup2._2, inner.deserialize(tup._2).get))
+				}
+			}
+		}
+}
+
+class HashingTrick(bits : Int) extends KryoAggregator[AdaptiveVector[Double]] {
+	val monoid = new HashingTrickMonoid[Double](bits)
+	def prepare(in : String) = {
+		if(in.contains(":")) {
+			val (key, value) = split(in, ":").get
+			monoid.init(key.getBytes, value.toDouble)
+		} else {
+			monoid.init(in.getBytes, 1.0)
+		}
+	}
+
+	def present(out : AdaptiveVector[Double]) = {
+		out.mkString(",")
+	}
+}
+
+class MinHash(hashes : Int) extends AlgebirdAggregator[Array[Byte]] {
+	val monoid = new MinHasher16(0.1, hashes * 2)
+	val injection = Bijection.bytes2Base64 andThen Base64String.unwrap
+	def prepare(in : String) = monoid.init(in)
+	def present(out : Array[Byte]) = {
+		out.grouped(2).toList.map{h => h.map{"%02X".format(_)}.mkString}.mkString(":")
 	}
 }
