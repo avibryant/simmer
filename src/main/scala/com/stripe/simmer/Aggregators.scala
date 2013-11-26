@@ -136,7 +136,6 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAgg
 
 class ExponentialMovingAverage(percent: Int) extends DoubleAggregator {
   val alpha = percent / 100.0
-  println(alpha)
   val monoid = new Monoid[Double] {
     val zero = 0.0
     def plus(left: Double, right: Double) =  alpha * left + (1-alpha) * right
