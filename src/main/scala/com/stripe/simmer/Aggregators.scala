@@ -15,6 +15,7 @@ object AlgebirdAggregators extends Registrar {
 	register("pct", 50){new Percentile(_)}
 	register("fh", 10){new HashingTrick(_)}
 	register("dcy", 86400){new Decay(_)}
+  register("ema", 90){new ExponentialMovingAverage(_)}
 	registerRecursive("top", 10){(k,inner) => new HeavyHitters(k,inner)}
 	registerRecursive("bot", 10){(k,inner) => new HeavyHitters(k,inner,-1.0)}
 }
@@ -131,6 +132,15 @@ class Decay(halflife : Int) extends KryoAggregator[DecayedValue] with NumericAgg
 	}
 
 	def present(out : DecayedValue) = presentNumeric(out).toString
+}
+
+class ExponentialMovingAverage(percent: Int) extends DoubleAggregator {
+  val alpha = percent / 100.0
+  println(alpha)
+  val monoid = new Monoid[Double] {
+    val zero = 0.0
+    def plus(left: Double, right: Double) =  alpha * left + (1-alpha) * right
+  }
 }
 
 class HeavyHitters[A](k : Int, inner : Aggregator[A], order : Double = 1.0) extends BufferableAggregator[SketchMap[String, A]] {
