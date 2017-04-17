@@ -1,4 +1,4 @@
-#simmer
+# simmer
 Avi Bryant
 
 Simmer is a streaming aggregation tool. It can be used in several contexts to incrementally and efficiently summarize large volumes of data using a fixed amount of memory. Some of the ways it can be used include:
@@ -17,23 +17,23 @@ Simmer is commutative and associative, which is to say that you can always use s
 
 It was inspired in part by [Hadoop streaming's Aggregate package](http://hadoop.apache.org/docs/r1.1.2/streaming.html#Hadoop+Aggregate+Package), but uses the probabalistic aggregation algorithms from Twitter's [Algebird](http://github.com/twitter/algebird).
 
-###To build:
+### To build:
 
 ````sh
 rake
 ````
 
-###To run:
+### To run:
 ````sh
 bin/simmer < /path/to/data.tsv
 ````
 
-###To run listening on UDP and writing to Redis on every 10 updates to a key:
+### To run listening on UDP and writing to Redis on every 10 updates to a key:
 ````sh
 target/simmer -u 8000 -r localhost:6379 -f 10
 ````
 
-###Input format
+### Input format
 
 The simmer command takes tab-delimited key-value input and combines all of the values for each key. Here's a very simple sample input:
 
@@ -60,7 +60,7 @@ Note that the prefix is treated not just as an annotation, but as an integral pa
 
 Many of the aggregations can be parameterized by including an integer in the prefix. For example, the percentile aggregator might appear as the prefix "pct95" (to compute the 95th percentile) or the prefix "pct50" to compute the median. A full list of the supported aggregations, and their parameterizations, is below.
 
-###Output format
+### Output format
 
 The output is, like the input format, a tab-separated key-value stream. The output is designed to be easy to read by humans, while at the same time allowing multiple outputs to be combined and fed back into simmer for further aggregation. As a simple example of how these are in conflict, consider an aggregation producing the average of all of the values for a key. The human-readable output is just a single number, the average. To properly combine multiple averages, however, you have to know the count of how many values originally went into each one, so that you can weight them properly. simmer solves this by producing two values for each key, one with a possibly opaque, machine-readable value that is suitable for further aggregation, and another that includes a human-readable version of the value. Often, it's convenient to filter simmer's output through "cut -f 1,3" to see only the human-readable versions.
 
@@ -77,7 +77,7 @@ dcy:x	%%%AQBjb20udHdpdHRlci5hbGdlYmlyZC5EZWNheWVkVmFsdeUBQMVkIdW357VAWQAAAAAAAA=
 
 Simmer will ignore the human readable values if it's given its own output to consume, because it only looks at the first two columns of input. It will also distinguish properly between new single values, and previous aggregated output, for the same key, and will happily combine these with each other. This means, for example, that you can take the aggregated output of yesterday's logs and cat it with the raw input for today's logs, and get the combined output of both.
 
-###Flushing
+### Flushing
 
 The simmer command takes two optional integer arguments. The first argument is --capacity, or -c: how many keys it should hold in memory at once. Whenever a new key is added that will exceed this capacity, the current aggregate value for the least recently used key is flushed. In general these will be infrequent keys that may never recur again, but if they do, you may see multiple outputs for the same key; these need to be aggregated in turn (perhaps by feeding the output back through simmer) to get the complete result.
 
@@ -89,15 +89,15 @@ The defaults are equivalent to:
 bin/simmer -c 5000 -f 0
 ````
 
-###UDP
+### UDP
 
 If you start simmer with --udp or -u, followed by a port number, it will listen on that UDP port instead of on stdin for rows of data; one UDP packet per row.
 
-###Redis
+### Redis
 
 If you start simmer with --redis or -r, followed by host:port, it will write to Redis instead of stdout; the first column of output (the key) will be used as the Redis key, and the second two columns, tab-separated, will be used as a Redis string value. Any existing data stored in Redis at that key will be merged with the output data whenever simmer flushes.
 
-###Numeric Aggregations
+### Numeric Aggregations
 
 The human-readable output of these is always a single number for each key.
 
@@ -209,7 +209,7 @@ dcy:y 122.3
 </tr>
 </table>
 
-###Other Aggregations
+### Other Aggregations
 
 These are more specialized than, or build in some way on, the numeric aggregations.
 
@@ -298,6 +298,6 @@ fh4 0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-32.0,0.0
 
 </table>
 
-###TODO
+### TODO
 
 See https://github.com/avibryant/simmer/issues
